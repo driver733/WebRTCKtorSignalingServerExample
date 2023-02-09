@@ -27,7 +27,7 @@ object TestWsClient1 {
                         is Frame.Text -> {
                             println(frame.readText())
                         }
-                        else -> Unit
+                        else -> {}
                     }
                 }
             }
@@ -52,7 +52,7 @@ object TestWsClient1 {
                                     send("${SessionManager.MessageType.ANSWER} SDP saknfaslkdjflskdjfklnsdfasdasdsd")
                                 }
                             }
-                            else -> Unit
+                            else -> {}
                         }
                     }
                 }

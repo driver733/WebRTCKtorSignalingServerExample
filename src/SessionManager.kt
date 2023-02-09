@@ -17,7 +17,7 @@ object SessionManager {
     fun onSessionStarted(sessionId: UUID, session: DefaultWebSocketServerSession) {
         sessionManagerScope.launch {
             mutex.withLock {
-                if (clients.size > 1) {
+                if (clients.size >= 2) {
                     sessionManagerScope.launch(NonCancellable) {
                         session.send(Frame.Close()) // only two peers are supported
                     }
@@ -25,7 +25,7 @@ object SessionManager {
                 }
                 clients[sessionId] = session
                 session.send("Added as a client: $sessionId")
-                if (clients.size > 1) {
+                if (clients.size >= 2) {
                     sessionState = WebRTCSessionState.Ready
                 }
                 notifyAboutStateUpdate()
@@ -50,13 +50,14 @@ object SessionManager {
 
     private fun handleOffer(sessionId: UUID, message: String) {
         if (sessionState != WebRTCSessionState.Ready) {
-            error("Session should be in Ready state to handle offer")
+            // Disabled to enable renegotiation
+//            error("Session should be in Ready state to handle offer (Current state = $sessionState)")
         }
         sessionState = WebRTCSessionState.Creating
         println("handling offer from $sessionId")
         notifyAboutStateUpdate()
-        val clientToSendOffer = clients.filterKeys { it != sessionId }.values.first()
-        clientToSendOffer.send(message)
+        val clientToSendOfferTo = clientToSendMessageTo(sessionId)
+        clientToSendOfferTo.send(message)
     }
 
     private fun handleAnswer(sessionId: UUID, message: String) {
@@ -64,17 +65,20 @@ object SessionManager {
             error("Session should be in Creating state to handle answer")
         }
         println("handling answer from $sessionId")
-        val clientToSendAnswer = clients.filterKeys { it != sessionId }.values.first()
-        clientToSendAnswer.send(message)
+        val clientToSendAnswerTo = clientToSendMessageTo(sessionId)
+        clientToSendAnswerTo.send(message)
         sessionState = WebRTCSessionState.Active
         notifyAboutStateUpdate()
     }
 
     private fun handleIce(sessionId: UUID, message: String) {
         println("handling ice from $sessionId")
-        val clientToSendIce = clients.filterKeys { it != sessionId }.values.first()
-        clientToSendIce.send(message)
+        val clientToSendIceTo = clientToSendMessageTo(sessionId)
+        clientToSendIceTo.send(message)
     }
+
+    private fun clientToSendMessageTo(sessionId: UUID) =
+        clients.filterKeys { it != sessionId }.values.first()
 
     fun onSessionClose(sessionId: UUID) {
         sessionManagerScope.launch {

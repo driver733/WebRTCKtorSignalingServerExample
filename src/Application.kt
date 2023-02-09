@@ -10,7 +10,7 @@ import java.util.*
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 @Suppress("unused") // Referenced in application.conf
-@kotlin.jvm.JvmOverloads
+@JvmOverloads
 fun Application.module(testing: Boolean = false) {
 
     install(WebSockets) {
@@ -35,7 +35,7 @@ fun Application.module(testing: Boolean = false) {
                         is Frame.Text -> {
                             SessionManager.onMessage(sessionID, frame.readText())
                         }
-                        else -> Unit
+                        else -> {}
                     }
                 }
                 println("Exiting incoming loop, closing session: $sessionID")
